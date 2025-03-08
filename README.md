@@ -1,6 +1,6 @@
 # Solar System Simulation  
 
-![Project Preview](media/preview.gif)  
+![Project Preview](media/solar-system.gif)  
 
 ### Live Demo: [Click Here](https://vighnesh74.github.io/Solar-System/)  
 
