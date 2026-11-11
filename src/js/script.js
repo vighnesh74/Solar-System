@@ -35,6 +35,54 @@ const orbit = new OrbitControls(camera, renderer.domElement);
 camera.position.set(-90, 140, 140);
 orbit.update();
 
+// Keep the camera near the solar system: cap how far you can zoom out.
+orbit.maxDistance = 400;
+
+// --- WASD movement (bounded near the solar system) ---
+const moveSpeed = 2;          // units per frame
+const maxRange = 320;         // how far the focus point can travel from the sun
+const keys = { w: false, a: false, s: false, d: false };
+
+window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (k in keys) keys[k] = true;
+});
+window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if (k in keys) keys[k] = false;
+});
+
+const forward = new THREE.Vector3();
+const right = new THREE.Vector3();
+const move = new THREE.Vector3();
+
+function updateMovement() {
+    // Direction the camera is looking, flattened to the horizontal plane.
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    forward.normalize();
+    right.crossVectors(forward, camera.up).normalize();
+
+    move.set(0, 0, 0);
+    if (keys.w) move.add(forward);
+    if (keys.s) move.sub(forward);
+    if (keys.d) move.add(right);
+    if (keys.a) move.sub(right);
+
+    if (move.lengthSq() === 0) return;
+
+    move.normalize().multiplyScalar(moveSpeed);
+
+    // Move both the camera and the orbit focus point together (pan).
+    const nextTarget = orbit.target.clone().add(move);
+
+    // Clamp so you can't travel too far from the solar system.
+    if (nextTarget.length() <= maxRange) {
+        camera.position.add(move);
+        orbit.target.copy(nextTarget);
+    }
+}
+
 const ambientLight = new THREE.AmbientLight(0x333333,50);
 scene.add(ambientLight);
 
@@ -128,6 +176,9 @@ function animate() {
     uranus.obj.rotateY(0.0004);
     neptune.obj.rotateY(0.0001);
     pluto.obj.rotateY(0.00007);
+
+    updateMovement();
+    orbit.update();
 
     renderer.render(scene, camera);
 }
